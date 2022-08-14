@@ -1,0 +1,12 @@
+[package]
+name = "dabox_log"
+version = "0.1.0"
+edition = "2021"
+authors = ["liquidlegs"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clipboard-win = { version = "4.4.2", features = ["std"] }
+widestring = { version = "1.0.2", features = ["alloc", "std"] }
+winapi = { version = "0.3.9", features = ["winuser", "ntdef", "synchapi", "sysinfoapi", "winbase", "libloaderapi", "fileapi", "wincon"] }
