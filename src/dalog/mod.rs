@@ -13,7 +13,7 @@ pub static RELEASE_BUFFER: u32 = 60000;
 pub static KEY_FILENAME: &str = "config.ini:kdata.dat";
 pub static CLIP_FILENAME: &str = "config.ini:cpdata.dat";
 pub const BASE_FILENAME: &str = "config.ini";
-pub static VERSION: &str = "0.0.2";
+pub static VERSION: &str = "0.1.0";
 
 #[derive(Debug, Copy, Clone)]
 #[allow(dead_code)]
