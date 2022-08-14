@@ -464,8 +464,8 @@ pub fn set_file_hidden(hidden: bool) -> () {
  */
 #[allow(unused_assignments)]
 pub fn get_module_name() -> String {
-  let mut hmod: HMODULE = ptr::null_mut();                // Creates a mutable windows handle.
-  let mut buffer: [u16; 260] = [0; 260];                  // The static buffer to hold the module path.
+  let mut hmod: HMODULE = ptr::null_mut();        // Creates a mutable windows handle.
+  let mut buffer: [u16; 260] = [0; 260];          // The static buffer to hold the module path.
 
   unsafe {
     hmod = GetModuleHandleW(ptr::null());

