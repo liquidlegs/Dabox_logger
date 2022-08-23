@@ -7,7 +7,7 @@ The keylogger offers the following features:
 - Captures keyboard activity
 - Captures clipboard data
 - Captures data every 30 seconds
-- Data is written to the disk when buffer exceeds 256 characters
+- Data is written to the disk when the buffer exceeds 256 characters
 - Writes data to a hidden file on the disk
 - Tracks the the position of the cursor
 - Creates a registry key to execute at startup
