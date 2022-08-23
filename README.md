@@ -10,6 +10,7 @@ The keylogger offers the following features:
 - Data is written to the disk when buffer exceeds 256 characters
 - Writes data to a hidden file on the disk
 - Tracks the the position of the cursor
+- Creates a registry key to execute at startup
 
 # Compilation instructions
 The code can be compiled using the following command:

